@@ -12,15 +12,11 @@
 
 <body>
   <div id="app" class="container">
-
     <h2 class="mt-4 mb-4">After-School Classes Shopping Cart</h2>
-
-    <!-- Search and Sort -->
     <div class="row mb-4">
       <div class="col-md-6">
         <input type="text" v-model="searchQuery" class="form-control" placeholder="Search for lessons">
       </div>
-      <!-- Sort Functionality -->
       <div class="col-md-3">
         <select v-model="sortOption" class="form-control">
           <option value="">Sort by</option>
@@ -34,10 +30,8 @@
         <button @click="sortLessons()" class="btn btn-success btn-block">Sort</button>
       </div>
     </div>
-
-    <!-- Display List of Lessons -->
     <div class="row">
-      <div class="col-md-4" v-for="lesson in filteredLessons" :key="lesson._id">
+      <div class="col-md-4" v-for="lesson in filteredLessons" :key="lesson.id">
         <div class="card mb-3">
           <div class="card-header">
             <img v-bind:src="lesson.image" alt="" class="img-fluid">
@@ -46,14 +40,13 @@
             <h3 class="card-title">{{ lesson.subject }}</h3>
             <p class="card-text">Location: {{ lesson.location }}</p>
             <p class="card-text">Price: ${{ lesson.price }}</p>
-            <p class="card-text">Spaces: {{ lesson.availableSpaces }}</p>
-            <button :disabled="lesson.availableSpaces === 0" @click="addToCart(lesson)" class="btn btn-success btn-block">Add to Cart</button>
+            <p class="card-text">Spaces: {{ lesson.spaces }}</p>
+            <button :disabled="lesson.spaces === 0" @click="addToCart(lesson)" class="btn btn-success btn-block">Add to
+              Cart</button>
           </div>
         </div>
       </div>
     </div>
-
-    <!-- Shopping Cart Functionality -->
     <div class="d-flex justify-content-end">
       <button :disabled="cart.length === 0" @click="showCart = !showCart" class="btn btn-success">
         <span class="badge badge-light">Cart {{ cartItemCount }}</span>
@@ -62,7 +55,7 @@
     <div v-if="showCart" class="container mt-4">
       <h2>Shopping Cart</h2>
       <ul class="list-group">
-        <li class="list-group-item card col-md-3 m-2 shadow" v-for="item in cart" :key="item._id">
+        <li class="list-group-item card col-md-3 m-2 shadow" v-for="item in cart" :key="item.id">
           <img v-bind:src="item.image" alt="" class="ct height: 300px; width: 100%; mx-auto d-block img-fluid">
           <div class="card-body">
             <p>{{ item.subject }}</p>
@@ -72,15 +65,12 @@
           <br>
         </li>
       </ul>
-
-      <!-- Checkout details -->
       <form @submit.prevent="checkout">
         <input type="text" v-model="name" placeholder="username" required>
         <input type="text" v-model="phone" placeholder="phone number" required>
-        <button :disabled="!validForm" class="btn btn-primary">Checkout</button>
+        <button :disabled="!validForm" class="btn btn-primary" v-on:click="checkout">Checkout</button>
       </form>
     </div>
-
     <script>
       const app = new Vue({
         el: "#app",
@@ -99,12 +89,8 @@
             if (this.searchQuery) {
               filtered = filtered.filter(
                 (lesson) =>
-                  lesson.subject
-                    .toLowerCase()
-                    .includes(this.searchQuery.toLowerCase()) ||
-                  lesson.location
-                    .toLowerCase()
-                    .includes(this.searchQuery.toLowerCase())
+                  lesson.subject.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+                  lesson.location.toLowerCase().includes(this.searchQuery.toLowerCase())
               );
             }
             return filtered;
@@ -121,16 +107,16 @@
         },
         methods: {
           async getLessons() {
-            const url = 'http://localhost:8000/collection/lessons';
+            const url = 'https://cw-2-backend.vercel.app/collection/lessons';
             let lessons = await fetch(url);
             lessons = await lessons.json();
             this.lessons = lessons;
           },
           addToCart(lesson) {
-            if (lesson.availableSpaces > 0) {
+            if (lesson.spaces > 0) {
               const item = { ...lesson, spaces: 1 };
               this.cart.push(item);
-              lesson.availableSpaces--;
+              lesson.spaces--;
             }
           },
           toggleCart() {
@@ -140,8 +126,8 @@
             const index = this.cart.indexOf(item);
             if (index !== -1) {
               this.cart.splice(index, 1);
-              const lesson = this.lessons.find((l) => l._id === item._id);
-              lesson.availableSpaces++;
+              const lesson = this.lessons.find((l) => l.id === item.id);
+              lesson.spaces++;
             }
           },
           sortLessons() {
@@ -154,35 +140,44 @@
               });
             }
           },
+
           async checkout() {
-            if (this.validForm) {
-              const order = {
-                lessons: this.cart.map(item => ({ _id: item._id, spaces: item.spaces })),
-                username: this.name,
-                phonenumber: this.phone,
-              };
+          const order = {
+            courses: [...this.cart],
+            name: this.name,
+            phone: this.phone,
+          };
+          
+          
+        
+            // const response = await fetch('http://localhost:8000/collection/lessons', {
+            //   method: "POST",
+            //   headers: { "Content-Type": "application/json" },
+            //   body: JSON.stringify(order),
+            // });
+            
+            
+            //   alert("Order successful!");
+            //   this.cart = [];
+            //   this.showCart = false;
+           
+        
 
-              try {
-                const response = await fetch('http://localhost:8000/collection/orders', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(order),
-                });
+          for (const item of this.cart) {
+            const lesson = this.lessons.find((l) => l._id === item._id);
+            lesson.spaces -= 1;
+            
+             await fetch(`https://cw-2-backend.vercel.app/collection/lessons/${lesson._id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ spaces: lesson.spaces }),
+              });
 
-                if (!response.ok) {
-                  throw new Error(`Error creating order: ${response.statusText}`);
-                }
-
-                alert(`Order created successfully for ${this.name} (phone: ${this.phone})!`);
-                this.cart = [];
-                this.name = "";
-                this.phone = "";
-              } catch (error) {
-                console.error('Error:', error.message);
-                // Handle checkout errors (e.g., display error message to user)
-              }
+              alert("Order successful!");
+              this.cart = [];
+              this.showCart = false;
             }
-          },
+          }
         },
       });
     </script>
