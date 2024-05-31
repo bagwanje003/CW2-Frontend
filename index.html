@@ -107,10 +107,11 @@
         },
         methods: {
           async getLessons() {
-            const url = 'https://cw-2-backend.vercel.app/collection/lessons';
-            let lessons = await fetch(url);
+            var url = 'https://cw-2-backend.vercel.app/collection/lessons';
+            var lessons = await fetch(url);
             lessons = await lessons.json();
             this.lessons = lessons;
+            console.log("fetched")
           },
           addToCart(lesson) {
             if (lesson.spaces > 0) {
@@ -142,7 +143,7 @@
           },
 
           async checkout() {
-          const order = {
+          var order = {
             courses: [...this.cart],
             name: this.name,
             phone: this.phone,
