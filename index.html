@@ -107,12 +107,13 @@
         },
         methods: {
           async getLessons() {
-            var url = 'https://cw-2-backend.vercel.app/collection/lessons';
+            var url = 'https://cw-backend-rho.vercel.app/collection/lessons';
             var lessons = await fetch(url);
             lessons = await lessons.json();
             this.lessons = lessons;
             console.log("fetched")
           },
+
           addToCart(lesson) {
             if (lesson.spaces > 0) {
               const item = { ...lesson, spaces: 1 };
@@ -144,7 +145,7 @@
 
           async checkout() {
           var order = {
-            courses: [...this.cart],
+            lessons: [...this.cart],
             name: this.name,
             phone: this.phone,
           };
@@ -168,7 +169,7 @@
             const lesson = this.lessons.find((l) => l._id === item._id);
             lesson.spaces -= 1;
             
-             await fetch(`https://cw-2-backend.vercel.app/collection/lessons/${lesson._id}`, {
+             await fetch(`https://cw-backend-rho.vercel.app/collection/lessons/${lesson._id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ spaces: lesson.spaces }),
